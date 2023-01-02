@@ -27,14 +27,16 @@ void NahsBricksFeatureTemp::begin() {
     _DS18B20.begin();
 
     _HDC1080_connected = HDC1080.begin();
+    _SHT4x_connected = SHT4x.begin();
 
     if (!FSdata.containsKey("sCorr")) FSdata.createNestedObject("sCorr");  // dict with sensorAddr as key and sensorCorr as value
     if (!FSdata.containsKey("sPrec")) FSdata["sPrec"] = 11;  // default sensor precision
 
     if (!RTCmem.isValid()) {
-        if (!_HDC1080_connected) {
+        if (!_HDC1080_connected || !_SHT4x_connected) {
             delay(15);
             _HDC1080_connected = HDC1080.isConnected();
+            _SHT4x_connected = SHT4x.isConnected();
         }
         RTCdata->precisionRequested = false;
         RTCdata->sensorCorrRequested = false;
@@ -70,6 +72,19 @@ void NahsBricksFeatureTemp::begin() {
             memset(RTCdata->HDC1080SN, 0, sizeof(RTCdata->HDC1080SN));
             RTCdata->HDC1080Corr = 0;
         }
+
+        if(_SHT4x_connected) {
+            SHT4x.getSN(SHTdata->SHT4xSN);
+            String sn = SHT4x.snToString(SHTdata->SHT4xSN);
+            if (FSdata["sCorr"].as<JsonObject>().containsKey(sn)) {
+                SHTdata->SHT4xCorr = FSdata["sCorr"].as<JsonObject>()[sn].as<float>();
+            }
+            else SHTdata->SHT4xCorr = 0;
+        }
+        else {
+            memset(SHTdata->SHT4xSN, 0, sizeof(SHTdata->SHT4xSN));
+            SHTdata->SHT4xCorr = 0;
+        }
     }
 }
 
@@ -89,6 +104,11 @@ void NahsBricksFeatureTemp::start() {
     // Trigger Conversion of HDC1080 in Background if connected
     if (_HDC1080_connected) {
         HDC1080.triggerRead();
+    }
+
+    // Trigger Conversion of SHT4x in Background if connected
+    if (_SHT4x_connected) {
+        SHT4x.triggerRead();
     }
 }
 
@@ -116,6 +136,11 @@ void NahsBricksFeatureTemp::deliver(JsonDocument* out_json) {
             s_array.add(HDC1080.snToString(RTCdata->HDC1080SN));
             s_array.add(RTCdata->HDC1080Corr);
         }
+        if (_SHT4x_connected) {
+            JsonArray s_array = c_array.createNestedArray();
+            s_array.add(SHT4x.snToString(SHTdata->SHT4xSN));
+            s_array.add(SHTdata->SHT4xCorr);
+        }
     }
 
     // wait for temperature conversion to complete and deliver the temperatures
@@ -130,6 +155,11 @@ void NahsBricksFeatureTemp::deliver(JsonDocument* out_json) {
         JsonArray s_array = t_array.createNestedArray();
         s_array.add(HDC1080.snToString(RTCdata->HDC1080SN));
         s_array.add(HDC1080.getT() + RTCdata->HDC1080Corr);
+    }
+    if (_SHT4x_connected) {
+        JsonArray s_array = t_array.createNestedArray();
+        s_array.add(SHT4x.snToString(SHTdata->SHT4xSN));
+        s_array.add(SHT4x.getT() + SHTdata->SHT4xCorr);
     }
 }
 
@@ -185,6 +215,13 @@ void NahsBricksFeatureTemp::printRTCdata() {
         Serial.print(HDC1080.snToString(RTCdata->HDC1080SN));
         Serial.print(" (");
         Serial.print(RTCdata->HDC1080Corr);
+        Serial.println(")");
+    }
+    if (_SHT4x_connected) {
+        Serial.print("    ");
+        Serial.print(SHT4x.snToString(SHTdata->SHT4xSN));
+        Serial.print(" (");
+        Serial.print(SHTdata->SHT4xCorr);
         Serial.println(")");
     }
     for (uint8_t i = 0; i < RTCdata->sensorCount; ++i) {
@@ -323,6 +360,12 @@ void NahsBricksFeatureTemp::_identifySensor() {
         HDC1080.triggerRead();
         iniTempHDC = HDC1080.getT();
     }
+    float iniTempSHT = 0;
+    if (_SHT4x_connected) {
+        SHT4x.getT();  // dummy read to be able to trigger an new conversion
+        SHT4x.triggerRead();
+        iniTempSHT = SHT4x.getT();
+    }
 
     Serial.println("Hit <enter> to start identification");
     SerHelp.readLine();
@@ -336,6 +379,15 @@ void NahsBricksFeatureTemp::_identifySensor() {
                 Serial.println();
                 Serial.print("ID of Sensor is: ");
                 Serial.println(HDC1080.snToString(RTCdata->HDC1080SN));
+                finished = true;
+            }
+        }
+        if (_SHT4x_connected) {
+            SHT4x.triggerRead();
+            if((SHT4x.getT() - iniTempSHT) >= 2) {
+                Serial.println();
+                Serial.print("ID of Sensor is: ");
+                Serial.println(SHT4x.snToString(SHTdata->SHT4xSN));
                 finished = true;
             }
         }
@@ -372,6 +424,13 @@ void NahsBricksFeatureTemp::_readSensorsRaw() {
         Serial.print(": ");
         Serial.println(HDC1080.getT());
     }
+    if (_SHT4x_connected) {
+        SHT4x.getT();  // dummy read to be able to trigger an new conversion
+        SHT4x.triggerRead();
+        Serial.print(SHT4x.snToString(SHTdata->SHT4xSN));
+        Serial.print(": ");
+        Serial.println(SHT4x.getT());
+    }
     for(uint8_t i = 0; i < RTCdata->sensorCount; ++i) {
         Serial.print(_deviceAddrToString(i));
         Serial.print(": ");
@@ -392,6 +451,13 @@ void NahsBricksFeatureTemp::_readSensorsCorr() {
         Serial.print(HDC1080.snToString(RTCdata->HDC1080SN));
         Serial.print(": ");
         Serial.println(HDC1080.getT() + RTCdata->HDC1080Corr);
+    }
+    if (_SHT4x_connected) {
+        SHT4x.getT();  // dummy read to be able to trigger an new conversion
+        SHT4x.triggerRead();
+        Serial.print(SHT4x.snToString(SHTdata->SHT4xSN));
+        Serial.print(": ");
+        Serial.println(SHT4x.getT() + SHTdata->SHT4xCorr);
     }
     for(uint8_t i = 0; i < RTCdata->sensorCount; ++i) {
         Serial.print(_deviceAddrToString(i));
@@ -430,6 +496,9 @@ void NahsBricksFeatureTemp::_setDefaultCorr() {
     if (HDC1080.snToString(RTCdata->HDC1080SN) == addr) {
         RTCdata->HDC1080Corr = corr;
     }
+    else if (SHT4x.snToString(SHTdata->SHT4xSN) == addr) {
+        SHTdata->SHT4xCorr = corr;
+    }
     else for (uint8_t i = 0; i < RTCdata->sensorCount; ++i) {
         if (_deviceAddrToString(i) == addr) {
             SCdata->sensorCorr[i] = corr;
@@ -452,6 +521,9 @@ void NahsBricksFeatureTemp::_deleteDefaultCorr() {
 
     if (HDC1080.snToString(RTCdata->HDC1080SN) == addr) {
         RTCdata->HDC1080Corr = 0;
+    }
+    else if (SHT4x.snToString(SHTdata->SHT4xSN) == addr) {
+        SHTdata->SHT4xCorr = 0;
     }
     else for (uint8_t i = 0; i < RTCdata->sensorCount; ++i) {
         if (_deviceAddrToString(i) == addr) {

@@ -6,6 +6,7 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <nahs-Bricks-Lib-HDC1080.h>
+#include <nahs-Bricks-Lib-SHT4x.h>
 #include <nahs-Bricks-Feature-BaseClass.h>
 #include <nahs-Bricks-Lib-RTCmem.h>
 #include <nahs-Bricks-Lib-FSmem.h>
@@ -15,6 +16,7 @@ class NahsBricksFeatureTemp : public NahsBricksFeatureBaseClass {
         static const uint16_t version = 1;
         static const uint8_t MAX_TEMP_SENSORS_COUNT = 8;
         bool _HDC1080_connected = false;
+        bool _SHT4x_connected = false;
         typedef struct {
             bool precisionRequested;
             bool sensorCorrRequested;
@@ -24,15 +26,20 @@ class NahsBricksFeatureTemp : public NahsBricksFeatureBaseClass {
             float HDC1080Corr;  // holds correction value for HDC1080 if connected
         } _RTCdata;
         typedef struct {
-            float sensorCorr[MAX_TEMP_SENSORS_COUNT];  // holds currently used sensor correction values
+            float sensorCorr[MAX_TEMP_SENSORS_COUNT / 2];  // holds currently used sensor correction values
         } _SCdata;
         typedef struct {
             DeviceAddress sensorAddr[4];  // holds addresses of currently connected sensors
         } _SAdata;
+        typedef struct {
+            SHT4x_SerialNumber SHT4xSN;  // holds SN of SHT4x Sensor if connected
+            float SHT4xCorr;  // holds correction value for SHT4x if connected
+        } _SHTdata;
         _SCdata* SCdata = RTCmem.registerData<_SCdata>();
         _SAdata* SAdata1 = RTCmem.registerData<_SAdata>();
         _SAdata* SAdata2 = RTCmem.registerData<_SAdata>();
         _RTCdata* RTCdata = RTCmem.registerData<_RTCdata>();
+        _SHTdata* SHTdata = RTCmem.registerData<_SHTdata>();
         JsonObject FSdata = FSmem.registerData("t");
         uint8_t _oneWirePin;
         OneWire _oneWire;
