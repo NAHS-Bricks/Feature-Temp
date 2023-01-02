@@ -2,5 +2,5 @@
 
 ## v1.3.0
 
-  * Added support for SHT4x Temerature/Humindity senosors
+  * Added support for SHT4x Temerature/Humindity sensors
   * Bugfix: Not consuming twice the needed RTCmem space for DS18B20 sensors correction values anymore
