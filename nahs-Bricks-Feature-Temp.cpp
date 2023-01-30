@@ -119,7 +119,7 @@ void NahsBricksFeatureTemp::deliver(JsonDocument* out_json) {
     // deliver sensors precision if requested
     if (RTCdata->precisionRequested) {
         RTCdata->precisionRequested = false;
-        out_json->getOrAddMember("p").set(RTCdata->sensorPrecision);
+        out_json->operator[]("p").set(RTCdata->sensorPrecision);
     }
 
     // deliver sensors correction values if requested
@@ -169,7 +169,7 @@ Processes feedback coming from BrickServer
 void NahsBricksFeatureTemp::feedback(JsonDocument* in_json) {
     // check if new sensorPrecision value is delivered
     if (in_json->containsKey("p")) {
-        uint8_t p = in_json->getMember("p").as<uint8_t>();
+        uint8_t p = in_json->operator[]("p").as<uint8_t>();
         if (p >= 9 and p <=12) {
             RTCdata->sensorPrecision = p;
             _transmitPrecisionToSensors(true);
@@ -178,7 +178,7 @@ void NahsBricksFeatureTemp::feedback(JsonDocument* in_json) {
 
     // evaluate requests
     if (in_json->containsKey("r")) {
-        for (JsonVariant value : in_json->getMember("r").as<JsonArray>()) {
+        for (JsonVariant value : in_json->operator[]("r").as<JsonArray>()) {
             switch(value.as<uint8_t>()) {
                 case 4:
                     RTCdata->sensorCorrRequested = true;
