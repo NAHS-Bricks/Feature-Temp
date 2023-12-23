@@ -18,22 +18,22 @@ class NahsBricksFeatureTemp : public NahsBricksFeatureBaseClass {
         bool _HDC1080_connected = false;
         bool _SHT4x_connected = false;
         typedef struct {
+            float HDC1080Corr;  // holds correction value for HDC1080 if connected
+            HDC1080_SerialNumber HDC1080SN;  // holds SN of HDC1080 Sensor if connected
+            uint8_t sensorCount;  // Holds number of currently connected temp-sensors
+            uint8_t sensorPrecision;
             bool precisionRequested;
             bool sensorCorrRequested;
-            uint8_t sensorPrecision;
-            uint8_t sensorCount;  // Holds number of currently connected temp-sensors
-            HDC1080_SerialNumber HDC1080SN;  // holds SN of HDC1080 Sensor if connected
-            float HDC1080Corr;  // holds correction value for HDC1080 if connected
         } _RTCdata;
         typedef struct {
-            float sensorCorr[MAX_TEMP_SENSORS_COUNT / 2];  // holds currently used sensor correction values
+            float sensorCorr[MAX_TEMP_SENSORS_COUNT];  // holds currently used sensor correction values
         } _SCdata;
         typedef struct {
             DeviceAddress sensorAddr[4];  // holds addresses of currently connected sensors
         } _SAdata;
         typedef struct {
-            SHT4x_SerialNumber SHT4xSN;  // holds SN of SHT4x Sensor if connected
             float SHT4xCorr;  // holds correction value for SHT4x if connected
+            SHT4x_SerialNumber SHT4xSN;  // holds SN of SHT4x Sensor if connected
         } _SHTdata;
         _SCdata* SCdata = RTCmem.registerData<_SCdata>();
         _SAdata* SAdata1 = RTCmem.registerData<_SAdata>();

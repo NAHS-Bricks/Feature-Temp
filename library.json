@@ -1,6 +1,6 @@
 {
   "name": "nahs-Bricks-Feature-Temp",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "Implements the feature Temp for NAHS-Bricks which cares about reading connected temperature sensors.",
   "keywords": "NAHS-Bricks, feature, temperature",
   "repository":
@@ -25,7 +25,7 @@
   "dependencies": {
       "bblanchon/ArduinoJson": ">=6.17.3",
       "nils-ost/nahs-Bricks-Lib-FSmem": ">=1.1.1",
-      "nils-ost/nahs-Bricks-Lib-RTCmem": ">=1.1.1",
+      "nils-ost/nahs-Bricks-Lib-RTCmem": ">=1.1.2",
       "nils-ost/nahs-Bricks-Lib-SerHelp": ">=0.2.0",
       "paulstoffregen/OneWire": ">=2.3.5",
       "milesburton/DallasTemperature": ">=3.9.1",
