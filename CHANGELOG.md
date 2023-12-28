@@ -1,5 +1,9 @@
 # nahs-Bricks-Feature-Temp Changelog
 
+## v1.3.3
+
+  * Now able to append on existing c and t-array on deliver
+
 ## v1.3.2
 
   * Bugfix: Wrong storagespace for _SCdata

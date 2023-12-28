@@ -125,7 +125,13 @@ void NahsBricksFeatureTemp::deliver(JsonDocument* out_json) {
     // deliver sensors correction values if requested
     if (RTCdata->sensorCorrRequested) {
         RTCdata->sensorCorrRequested = false;
-        JsonArray c_array = out_json->createNestedArray("c");
+
+        JsonArray c_array;
+        if (out_json->containsKey("c"))
+            c_array = out_json->operator[]("c").as<JsonArray>();
+        else
+            c_array = out_json->createNestedArray("c");
+
         for (uint8_t i = 0; i < RTCdata->sensorCount; ++i) {
             JsonArray s_array = c_array.createNestedArray();
             s_array.add(_deviceAddrToString(i));
@@ -144,7 +150,12 @@ void NahsBricksFeatureTemp::deliver(JsonDocument* out_json) {
     }
 
     // wait for temperature conversion to complete and deliver the temperatures
-    JsonArray t_array = out_json->createNestedArray("t");
+    JsonArray t_array;
+    if (out_json->containsKey("t"))
+        t_array = out_json->operator[]("t").as<JsonArray>();
+    else
+        t_array = out_json->createNestedArray("t");
+
     while(!_DS18B20.isConversionComplete()) delay(1);
     for (uint8_t i = 0; i < RTCdata->sensorCount; ++i) {
         JsonArray s_array = t_array.createNestedArray();
